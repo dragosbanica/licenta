@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Vulnerabilitys management</title>
+
+</head>
+
+<body>
+
+    <h1>Welcome to my vulnerability management tool</h1>
+    <p>This is a tool that uses the functionality of Open SCAP to scan for vulnerabilitys in Ubuntu versions</p>
+    <p>First, chose 1 of the 3 categorys of OVAL Definitions to download:
+         <ul>
+            <li>CVE ~ 0</li>
+            <li>PKG ~ 1</li>
+            <li>USN ~ 2</li>
+         </ul>
+    </p>
+    <form action="{{ url_for('process_input') }}" id="getCateg" method="POST">
+        <input type="text" name="nrInput" maxlength="1" required>
+    </form>
+
+    {% if error %}
+        <p style="color: red;" >Invalid input. Please insert a number between 0 and 2.</p>
+    {% endif %}
+</body>
+</html>

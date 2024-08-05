@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perform a scan</title>
+    <style>
+
+        #result {
+            margin-top: 20px;
+        }
+
+        #report {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow: auto;
+            max-height: 400px;
+        }
+    </style>
+</head>
+<body>
+    
+    {% if prc_msg %}
+        <p id="prc_msg">{{ prc_msg }}</p>
+        <form id="scanForm" method="POST">
+
+        <button type="submit">Run Scan</button>
+
+        </form>
+        <div id="result"></div>
+        <div id="report"></div>
+    {% endif %}
+
+    
+
+    
+
+
+    <script>
+
+        document.getElementById('scanForm').onsubmit = async function(event) {
+            event.preventDefault();
+            const response = await fetch('/scan', {
+                method: 'POST'
+            });
+
+            const data = await response.json();
+
+            document.getElementById('result').innerText = data.message;
+            document.getElementById('report').innerHTML = data.report;
+        }
+    </script>
+
+</body>
+</html>

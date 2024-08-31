@@ -30,7 +30,7 @@
             cursor: pointer;
         }
 
-        /* Adaugare stil pentru hover */
+        /* Adăugare stil pentru hover */
         .logout_button:hover {
             background-color: #b30000;
         }
@@ -45,17 +45,23 @@
         <h2 id="welcome_msg">{{ welcome_msg }}</h2>
     {% endif %}
 
-    <h2>This is a vulnerability management tool that uses the functionality of Open SCAP to scan for vulnerabilitys in Ubuntu versions</h1>
-    <p>Before you can perform a scan you need to chose one of the 3 categorys of OVAL Definitions to download: 
+    <h2>This is a vulnerability management tool that uses the functionality of Open SCAP to scan for vulnerabilities in Ubuntu versions.</h1>
+    <p>Before you can perform a scan you need to choose one of the 3 categories of OVAL Definitions to be downloaded to your system: 
          <ul>
             <li>CVE ~ 0</li>
             <li>PKG ~ 1</li>
             <li>USN ~ 2</li>
          </ul>
     </p>
-    <form action="{{ url_for('process_input') }}" id="getCateg" method="POST">
-        <input type="text" name="nrInput" maxlength="1" required>
+    <form action="{{ url_for('process_input') }}" id="getCateg" method="post">
+        <input type="text" id="nrInput" name="nrInput" maxlength="1" required>
     </form>
+
+    {% if error %}
+    
+    <p style="color: red;" >Invalid input. Please insert a number between 0 and 2.</p>
+
+    {% endif %}
 
     <p>History of scan reports </p>
 
@@ -64,11 +70,6 @@
         <li><a href="{{ url_for('view_file', filename=file) }}">{{ file }}</a></li>
 
     {% endfor %}
-
-    {% if error %}
-        <p style="color: red;" >Invalid input. Please insert a number between 0 and 2.</p>
-    {% endif %}
-
 
     <form action="{{ url_for('logout') }}" method="post">
         <button  type= "submit" class="logout_button">Logout </button>

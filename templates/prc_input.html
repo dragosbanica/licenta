@@ -4,32 +4,118 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perform a scan</title>
+    
+
     <style>
 
-        #result {
-            margin-top: 20px;
+        body {
+            margin: 0;
+            height: 100vh;
         }
 
-        #report {
-            margin-top: 20px;
-            border: 1px solid #ccc;
+        #scanResult {
+            border: 2px solid #000; /* Chenar */
             padding: 10px;
-            overflow: auto;
-            max-height: 400px;
+            margin-top: 20px;
+            height: 400px;
+            overflow-y: auto; /* Permite scroll vertical */
+        }
+
+        /* Stilizarea butonului */
+        .logout_button {
+            position: absolute;
+            top: 10px; /* Distanta fata de marginea de sus */
+            right: 10px; /* Distanta fata de marginea din dreapta */
+            padding: 10px 20px;
+            background-color: #FF6347;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .run_scan_button{
+        position: relative;
+        left: 10px;
+        padding: 10px 20px;
+        background-color: #FF6347;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        
+        }
+
+        .run_scan_button:hover{
+            background-color: #b30000;
+        }
+
+        .go_back_button{
+            position: relative;
+            top: 10px;
+            left: 10px;
+            padding: 10px 20px;
+            background-color: #FF6347;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .go_back_button:hover{
+            background-color: #b30000
+        }
+
+        /* Adaugare stil pentru hover */
+        .logout_button:hover {
+            background-color: #b30000;
         }
     </style>
 </head>
 <body>
     
-    {% if prc_msg %}
-        <p id="prc_msg">{{ prc_msg }}</p>
-        <form id="scanForm" method="POST">
+    <form  action="{{ url_for('index') }}" method="post">
 
-        <button type="submit">Run Scan</button>
+        <button type="submit" class = "go_back_button" name="go_back_button">Go back</button>
 
-        </form>
-        <div id="result"></div>
-        <div id="report"></div>
+    </form>
+
+    <p>{{ prc_msg }}</p>
+
+    {% if show_button %}
+
+    <form action="/scan" method="post">
+
+        <button type="submit" class="run_scan_button">Run scan</button>
+
+    </form>
+
+    {% endif %}
+
+
+    {% if scan_result %}
+
+    <div id="scanResult">
+
+        {{ scan_result|safe }}
+
+    </div>
+
+    <div>
+        <p>These are possible vulnerabilities. Please fix them and then run another scan. </p>
+        <ul>
+            {% for id, title, description in def_info %}
+
+                <li>{{id}} </li>
+                <li>{{title}}</li>
+                <li>{{description}}</li>
+                <p> </p>
+
+            {% endfor %}
+
+        </ul>
+    </div>
+
     {% endif %}
 
     <p>History of scan reports </p>
@@ -39,23 +125,12 @@
         <li><a href="{{ url_for('view_file', filename=file) }}">{{ file }}</a></li>
 
     {% endfor %}
+    
 
+    <form action="{{ url_for('logout') }}" method="post">
+        <button  type= "submit" class="logout_button">Logout </button>
+    </form>
 
-
-    <script>
-
-        document.getElementById('scanForm').onsubmit = async function(event) {
-            event.preventDefault();
-            const response = await fetch('/scan', {
-                method: 'POST'
-            });
-
-            const data = await response.json();
-
-            document.getElementById('result').innerText = data.message;
-            document.getElementById('report').innerHTML = data.report;
-        }
-    </script>
 
 </body>
 </html>

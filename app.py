@@ -2,11 +2,11 @@ from flask import Flask, jsonify, request, render_template, url_for, redirect, s
 import subprocess
 import os
 from scripts.download_oval import download_oval_file
+from scripts.true_definitions import get_def_info
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from datetime import datetime
-
 
 app = Flask(__name__)
 
@@ -67,29 +67,35 @@ def run_openscap():
 	username=session['username']
 	now=datetime.now()
 	timestamp=now.strftime("%Y%m%d_%H%M%S")
-	filename=f"{username}_{timestamp}.html"
+	filename1=f"{username}_{timestamp}.html"
+	filename2=f"{username}_{timestamp}.xml"
 
 
 	directory=os.path.join('generated_files', username)
 	os.makedirs(directory, exist_ok=True)
 
-	file_path=os.path.join(directory, filename)
+	file_path1=os.path.join(directory, filename1)
+	file_path2=os.path.join(directory, filename2)
 
+	# Bash command for Open SCAP to evaluate and generate an html  file
+	cmd1 = ['oscap', 'oval', 'eval', '--report', file_path1, oval_file]
+	cmd2= ['oscap', 'oval', 'eval', '--results', file_path2, oval_file]
 
-	# Bash command for Open SCAP to evaluate
-	cmd = ['oscap', 'oval', 'eval', '--report', file_path, oval_file]
 
 	# Execute command
-	result = subprocess.run(cmd, capture_output=True, text=True)
+	result1 = subprocess.run(cmd1, capture_output=True, text=True)
 
-	if result.returncode == 0:
-		x= f"Scan completed successfully. Report saved to {filename}."
-		return x, filename
+	result2 = subprocess.run(cmd2, capture_output=True, text=True)
+
+	if result1.returncode == 0:
+		msg= f"Scan completed successfully. Report saved to {filename1} and {filename2}."
+		return msg, filename1, filename2
 	else:
 
-		x= f"Scan failed. Error: {result.stderr}"
-		filename="0"
-		return x, filename
+		msg= f"Scan failed. Error: {result.stderr}"
+		filename1="0"
+		filename2="0"
+		return msg, filename1, filename2
 
 
 ####Get the name of the files in the directory of the current user###
@@ -105,7 +111,7 @@ def get_file_names():
 
 #####################################################################
 
-@app.route('/')
+@app.route('/', methods=['GET','POST'])
 @login_required
 def index():
 	if 'username' in session:
@@ -161,14 +167,20 @@ def logout():
 @app.route('/scan', methods=['POST'])
 @login_required
 def scan():
-	result = run_openscap()
+	msg, filename1, filename2 = run_openscap()
+	files=get_file_names()
+
 	username=session['username']
 	directory=os.path.join('generated_files', username)
-	file_path=os.path.join(directory, result[1])
+	file_path=os.path.join(directory, filename1)
+
+	filename2=username + "/" + filename2
+	def_info=get_def_info(filename2)
 
 	with open(file_path, 'r') as file:
-		report_content=file.read()
-	return jsonify({'message': result[0], 'report': report_content})
+		scan_result=file.read()
+
+	return render_template('prc_input.html', message=msg, scan_result=scan_result, def_info=def_info, files=files)
 
 
 @app.route('/view_file/<filename>')
@@ -187,16 +199,18 @@ def view_file(filename):
 	return render_template('view_file.html',content=content)
 
 
-@app.route('/process_input', methods=['POST'])
+@app.route('/process_input', methods=[ 'POST'])
 @login_required
 def process_input():
 	types=['cve', 'pkg', 'usn']
 	char_input=request.form['nrInput']
+	welcome_msg=f"Good to see you {session['username']}!"
+
+	files=get_file_names()
 
 	if char_input is not None:
 		try:
 			char_input=int(char_input)
-			files=get_file_names()
 
 			if char_input in (0,1,2):
 				global type
@@ -205,20 +219,22 @@ def process_input():
 			x=download_oval_file(char_input) #x contains: type, distribution codename and a message in case of an error
 			if isinstance(x[2], str):
 				if x[2]== "The file exists in the current directory!":
-					prc_msg=f"The data type {x[0]} for {x[1]} is already downloaded in your directory. You can now procced to scan your system."
-					return render_template('prc_input.html', prc_msg=prc_msg, files=files)
+					prc_msg=f"The {x[0]} data type for {x[1]} (Ubuntu distribution codename) is already downloaded in your directory. You can now perform a scan."
+					show_button=True
+					return render_template('prc_input.html', prc_msg=prc_msg, show_button=show_button, files=files)
 				else:
 					prc_msg="Invalid input format. Please insert a number ranged from 0 to 2 which matches the data type."
-					return render_template('index.html', error=True)
+					return render_template('index.html', error=True, files=files, welcome_msg=welcome_msg)
 			else:
-				prc_msg=f"We downloaded your OVAL Definitions data type {x[0]} for your distribution codename of Ubuntu: {x[1]}. You can now procced to scan your system."
-				return render_template('prc_input.html', prc_msg=prc_msg, files=files)
+				prc_msg=f"I downloaded the OVAL Definitions data type {x[0]} for the Ubuntu distribution codename: {x[1]}. You can now perform a scan."
+				show_button=True
+				return render_template('prc_input.html', prc_msg=prc_msg, show_button=show_button, files=files)
 		except ValueError:
 			prc_msg="Invalid input format. Please insert a number ranged from 0 to 2 which matches the data type."
-			return render_template('index.html', error=True)
+			return render_template('index.html', error=True, files=files, welcome_msg=welcome_msg)
 	else:
 		prc_msg="No number provided. Please insert a number."
-		return render_template('index.html', error=True)
+		return render_template('index.html', error=True, files=files, welcome_msg=welcome_msg)
 
 
 if __name__ == '__main__':

@@ -1,27 +1,69 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Vulnerabilitys management</title>
-
+    <title>Dashboard</title>
 
     <style>
-
         body {
             margin: 0;
             height: 100vh;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
         }
 
         /* Stilizarea butonului */
         .logout_button {
             position: absolute;
-            top: 10px; /* Distanta fata de marginea de sus */
-            right: 10px; /* Distanta fata de marginea din dreapta */
+            top: 10px;
+            right: 10px;
+            padding: 10px 20px;
+            background-color: #FF6347;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000; 
+        }
+
+        .logout_button:hover {
+            background-color: #b30000;
+        }
+
+        /* Stil pentru sectiuni */
+        .section {
+            width: 80%;
+            max-width: 800px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            margin: 20px auto;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .section h2 {
+            margin-top: 0;
+        }
+
+        .section p {
+            margin: 10px 0;
+        }
+
+        .section ul {
+            padding-left: 20px;
+            margin-top: 10px;
+        }
+
+        .section input[type="text"] {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .section button {
             padding: 10px 20px;
             background-color: #FF6347;
             color: white;
@@ -30,52 +72,75 @@
             cursor: pointer;
         }
 
-        /* Adăugare stil pentru hover */
-        .logout_button:hover {
+        .section button:hover {
             background-color: #b30000;
         }
+
+        .error-message {
+            color: red;
+            text-align: center;
+        }
+
+        /* Stil pentru sectiunea de bun venit */
+        .welcome-section {
+            width: 80%;
+            max-width: 800px;
+            padding: 20px;
+            background-color: #fff; 
+            border-radius: 8px;
+            margin: 20px auto; 
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+            text-align: center;
+        }
+
+        .welcome-section h2 {
+            margin: 0;
+            font-size: 2em;
+            color: #FF6347; 
+        }
     </style>
-
-
 </head>
-
 <body>
 
     {% if welcome_msg %}
-        <h2 id="welcome_msg">{{ welcome_msg }}</h2>
+        <div class="welcome-section">
+            <h2 id="welcome_msg">{{ welcome_msg }}</h2>
+        </div>
     {% endif %}
 
-    <h2>This is a vulnerability management tool that uses the functionality of Open SCAP to scan for vulnerabilities in Ubuntu versions.</h1>
-    <p>Before you can perform a scan you need to choose one of the 3 categories of OVAL Definitions to be downloaded to your system: 
-         <ul>
+    <div class="section">
+        <h2>This is a vulnerability management tool which uses the functionality of Open SCAP to scan for vulnerabilities in Ubuntu versions.</h2>
+        <p>Before you can perform a scan you need to choose one of the 3 categories of OVAL Definitions to be downloaded to your system:</p>
+        <ul>
             <li>CVE ~ 0</li>
             <li>PKG ~ 1</li>
             <li>USN ~ 2</li>
-         </ul>
-    </p>
-    <form action="{{ url_for('process_input') }}" id="getCateg" method="post">
-        <input type="text" id="nrInput" name="nrInput" maxlength="1" required>
-    </form>
+        </ul>
+        <form action="{{ url_for('process_input') }}" id="getCateg" method="post">
+            <input type="text" id="nrInput" name="nrInput" maxlength="1" required>
+            <button type="submit">Submit</button>
+        </form>
 
-    {% if error %}
+        {% if error %}
+        <p class="error-message">Invalid input. Please insert a number between 0 and 2.</p>
+        {% endif %}
+        
+    </div>
+
     
-    <p style="color: red;" >Invalid input. Please insert a number between 0 and 2.</p>
 
-    {% endif %}
-
-    <p>History of scan reports </p>
-
-    {% for file in files %}
-
-        <li><a href="{{ url_for('view_file', filename=file) }}">{{ file }}</a></li>
-
-    {% endfor %}
+    <div class="section">
+        <h2>History of scan reports</h2>
+        <ul>
+            {% for file in files %}
+                <li><a href="{{ url_for('view_file', filename=file) }}">{{ file }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
 
     <form action="{{ url_for('logout') }}" method="post">
-        <button  type= "submit" class="logout_button">Logout </button>
+        <button type="submit" class="logout_button">Logout</button>
     </form>
-        
-    
 
 </body>
 </html>

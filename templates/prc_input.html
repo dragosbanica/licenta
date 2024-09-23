@@ -5,12 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perform a scan</title>
     
-
     <style>
-
         body {
             margin: 0;
             height: 100vh;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px;
+        }
+
+        .section {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            width: 40%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .section h2 {
+            margin-top: 0;
+        }
+
+        .button-container {
+            text-align: center;
+        }
+
+        button {
+            background-color: #FF6347;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #b30000;
         }
 
         #scanResult {
@@ -21,11 +57,10 @@
             overflow-y: auto; /* Permite scroll vertical */
         }
 
-        /* Stilizarea butonului */
         .logout_button {
             position: absolute;
-            top: 10px; /* Distanta fata de marginea de sus */
-            right: 10px; /* Distanta fata de marginea din dreapta */
+            top: 10px;
+            right: 10px;
             padding: 10px 20px;
             background-color: #FF6347;
             color: white;
@@ -34,23 +69,11 @@
             cursor: pointer;
         }
 
-        .run_scan_button{
-        position: relative;
-        left: 10px;
-        padding: 10px 20px;
-        background-color: #FF6347;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        
-        }
-
-        .run_scan_button:hover{
+        .logout_button:hover {
             background-color: #b30000;
         }
 
-        .go_back_button{
+        .go_back_button {
             position: relative;
             top: 10px;
             left: 10px;
@@ -62,75 +85,98 @@
             cursor: pointer;
         }
 
-        .go_back_button:hover{
-            background-color: #b30000
+        .go_back_button:hover {
+            background-color: #b30000;
         }
 
-        /* Adaugare stil pentru hover */
-        .logout_button:hover {
-            background-color: #b30000;
+        form input[type="text"], form input[type="password"] {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        form input[type="submit"] {
+            padding: 10px 20px;
+            background-color: #FF6347;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
     
-    <form  action="{{ url_for('index') }}" method="post">
-
-        <button type="submit" class = "go_back_button" name="go_back_button">Go back</button>
-
+    <!-- Buton de Go back -->
+    <form action="{{ url_for('index') }}" method="post">
+        <button type="submit" class="go_back_button">Go back</button>
     </form>
 
     <p>{{ prc_msg }}</p>
 
-    {% if show_button %}
+    <div class="container">
+        <!-- First Section: Local Scan -->
+        <div class="section">
+            <h2>Perform a local scan</h2>
+            {% if show_button %}
+            <form action="/scan" method="post">
+                <button type="submit" class="run_scan_button">Run local scan</button>
+            </form>
+            {% endif %}
+        </div>
 
-    <form action="/scan" method="post">
+        <!-- Second Section: Remote Scan -->
+        <div class="section">
+            <h2>Perform a remote scan</h2>
+            {% if scan_server_button %}
+            <form action="/remote_scan" method="post">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required>
 
-        <button type="submit" class="run_scan_button">Run scan</button>
+                <label for="ip_addr">IP address:</label>
+                <input type="text" id="ip_addr" name="ip_addr" required>
 
-    </form>
+                <label for="password">Password:</label>
+                <input type="password" name="password" id="password" required>
 
-    {% endif %}
-
-
-    {% if scan_result %}
-
-    <div id="scanResult">
-
-        {{ scan_result|safe }}
-
+                <button type="submit" class="run_scan_button">Run remote scan</button>
+            </form>
+            {% endif %}
+        </div>
     </div>
 
+    <!-- Rezultatul scanarii -->
+    {% if scan_result %}
+    <div id="scanResult">
+        {{ scan_result|safe }}
+    </div>
     <div>
         <p>These are possible vulnerabilities. Please fix them and then run another scan. </p>
         <ul>
             {% for id, title, description in def_info %}
-
                 <li>{{id}} </li>
                 <li>{{title}}</li>
                 <li>{{description}}</li>
-                <p> </p>
-
+                <p></p>
             {% endfor %}
-
         </ul>
     </div>
-
     {% endif %}
 
-    <p>History of scan reports </p>
+    <!-- Istoric scanari -->
+    <p>History of scan reports</p>
+    <ul>
+        {% for file in files %}
+            <li><a href="{{ url_for('view_file', filename=file) }}">{{ file }}</a></li>
+        {% endfor %}
+    </ul>
 
-    {% for file in files %}
-    
-        <li><a href="{{ url_for('view_file', filename=file) }}">{{ file }}</a></li>
-
-    {% endfor %}
-    
-
+    <!-- Buton de Logout -->
     <form action="{{ url_for('logout') }}" method="post">
-        <button  type= "submit" class="logout_button">Logout </button>
+        <button type="submit" class="logout_button">Logout</button>
     </form>
-
 
 </body>
 </html>

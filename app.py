@@ -1,12 +1,14 @@
-from flask import Flask, jsonify, request, render_template, url_for, redirect, session, send_file
+from flask import Flask, flash, request, render_template, url_for, redirect, session, send_file
 import subprocess
 import os
 from scripts.download_oval import download_oval_file
 from scripts.true_definitions import get_def_info
+from scripts.remote_scan import run_openscap_remote
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from datetime import datetime
+import paramiko
 
 app = Flask(__name__)
 
@@ -98,6 +100,7 @@ def run_openscap():
 		return msg, filename1, filename2
 
 
+
 ####Get the name of the files in the directory of the current user###
 
 
@@ -107,6 +110,7 @@ def get_file_names():
 	if not os.path.exists(directory):
 		os.makedirs(directory)
 	files=os.listdir(directory)
+	files=sorted(files)
 	return files
 
 #####################################################################
@@ -182,6 +186,45 @@ def scan():
 
 	return render_template('prc_input.html', message=msg, scan_result=scan_result, def_info=def_info, files=files)
 
+@app.route('/remote_scan', methods=['POST', 'GET'])
+@login_required
+def remote_scan():
+	user=request.form["username"]
+	ip_addr=request.form["ip_addr"]
+	password=request.form["password"]
+
+	if not user or not password or not ip_addr:
+		flash('All fields are required!')
+		return redirect(url_for('index'))
+
+	files=get_file_names()
+
+	try:
+		ssh=paramiko.SSHClient()
+		ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+		ssh.connect(ip_addr, username=user, password=password)
+
+		message, filename_html, filename_xml=run_openscap_remote(ssh, type)
+
+		ssh.close()
+
+		username=session['username']
+
+		directory=os.path.join('generated_files', username)
+		file_path=os.path.join(directory, filename_html)
+
+		filename_xml=username + "/" + filename_xml
+		def_info=get_def_info(filename_xml)
+
+		with open(file_path, 'r') as file:
+			scan_result=file.read()
+
+		return render_template('prc_input.html', message=message, scan_result=scan_result, def_info=def_info, files=files)
+
+
+	except Exception as e:
+		flash(f"Connection failed: {str(e)}")
+		return redirect(url_for('index'))
 
 @app.route('/view_file/<filename>')
 @login_required
@@ -221,14 +264,16 @@ def process_input():
 				if x[2]== "The file exists in the current directory!":
 					prc_msg=f"The {x[0]} data type for {x[1]} (Ubuntu distribution codename) is already downloaded in your directory. You can now perform a scan."
 					show_button=True
-					return render_template('prc_input.html', prc_msg=prc_msg, show_button=show_button, files=files)
+					scan_server_button=True
+					return render_template('prc_input.html', prc_msg=prc_msg, show_button=show_button, scan_server_button=scan_server_button, files=files)
 				else:
 					prc_msg="Invalid input format. Please insert a number ranged from 0 to 2 which matches the data type."
 					return render_template('index.html', error=True, files=files, welcome_msg=welcome_msg)
 			else:
 				prc_msg=f"I downloaded the OVAL Definitions data type {x[0]} for the Ubuntu distribution codename: {x[1]}. You can now perform a scan."
 				show_button=True
-				return render_template('prc_input.html', prc_msg=prc_msg, show_button=show_button, files=files)
+				scan_server_button=True
+				return render_template('prc_input.html', prc_msg=prc_msg, show_button=show_button, scan_server_button=scan_server_button, files=files)
 		except ValueError:
 			prc_msg="Invalid input format. Please insert a number ranged from 0 to 2 which matches the data type."
 			return render_template('index.html', error=True, files=files, welcome_msg=welcome_msg)
